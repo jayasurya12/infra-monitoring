@@ -1,0 +1,11 @@
+{
+  "name": "receiver",
+  "version": "1.0.0",
+  "main": "app.js",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "mysql": "^2.18.1",
+    "nsqjs": "^0.9.1"
+  }
+}

@@ -1,0 +1,97 @@
+version: '3.9'
+
+services:
+  agent:
+    build: ./agent
+    container_name: agent
+    hostname: little_pearl
+    depends_on:
+      - receiver
+    networks:
+      - infra-net
+
+  mysql:
+    image: mysql:latest
+    container_name: "mysql"
+    environment:
+      MYSQL_ROOT_PASSWORD: Localhost@123
+      MYSQL_DATABASE: infra_monitoring
+    volumes:
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3306:3306"
+    networks:
+      - infra-net
+
+  nsq:
+    image: nsqio/nsq
+    container_name: "nsq"
+    command: nsqd    
+    ports:
+      - "4150:4150"
+      - "4151:4151"
+    networks:
+      - infra-net
+
+  nsqadmin:
+    image: nsqio/nsq
+    container_name: "nsqadmin"
+    command: nsqadmin --lookupd-http-address=nsqlookupd:4161
+    ports:
+      - "4171:4171"
+    networks:
+      - infra-net
+
+  nsqlookupd:
+    image: nsqio/nsq
+    container_name: "nsqlookupd"
+    command: nsqlookupd
+    ports:
+      - "4160:4160"
+      - "4161:4161"
+    networks:
+      - infra-net
+
+  receiver:
+    build: ./receiver
+    container_name: "receiver"
+    environment:
+      NSQ_URL: nsq:4150
+      MYSQL_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: Localhost@123
+      MYSQL_DATABASE: infra_monitoring
+    depends_on:
+      - mysql
+      - nsq
+    ports:
+      - "3000:3000"
+    networks:
+      - infra-net
+
+  consumer:
+    build: ./consumer
+    container_name: "consumer"
+    environment:
+      NSQ_URL: nsq:4150
+      MYSQL_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: Localhost@123
+      MYSQL_DATABASE: infra_monitoring
+    depends_on:
+      - mysql
+      - nsq
+    networks:
+      - infra-net
+
+  web:
+    build: ./web
+    container_name: "web"
+    ports:
+      - "3001:3000"
+    networks:
+      - infra-net
+
+networks:
+  infra-net:
+    driver: bridge
